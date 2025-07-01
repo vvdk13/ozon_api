@@ -63,22 +63,53 @@ def get_product_info(list_of_product: list):
         print("Error: {e}")
 
 def get_product_csv(products_json, filename = 'products.csv'):
+    import csv
     pr = json.loads(products_json)
     lines = []
 
     for item in pr['items']:
-        line = [item['name'],
-                item['offer_id'],
-                float(item['marketing_price']),
-                float(item['min_price']),
-                float(item['price']),
-                item['old_price'],
-                item['commissions'][1]['value'],
-                item['commissions'][1]['delivery_amount'],
-                30, # Обработка отправления
-                item['commissions'][1]['return_amount'], #  Доставка
-                (float(item['price'])*1.5)/100, # Эквайринг 1.5% от price
-                round((float(item['price']) * 1.5) / 100, 2) + item['commissions'][1]['return_amount'] + 30 + item['commissions'][1]['delivery_amount'] + item['commissions'][1]['value']
+        name = str(item['name']),
+        offer_id = str(item['offer_id'])
+        marketing_price = float(item['marketing_price'] if item['marketing_price'] != '' else 0)
+        min_price = float(item['min_price'] if item['min_price'] != '' else 0)
+        price = float(item['price'])
+        old_price = float(item['old_price'] if item['old_price'] != '' else 0)
+        ozon_commissions = round(float(item['commissions'][1]['value']))
+        last_mile = item['commissions'][1]['delivery_amount']
+        drop_off = 30
+        delivery = item['commissions'][1]['return_amount']
+        acquiring = round(float(item['price'])*1.9/100)
+        total_expenses = ozon_commissions + last_mile + drop_off + delivery + acquiring
+        line = [name,
+                offer_id,
+                marketing_price,
+                min_price,
+                price,
+                old_price,
+                ozon_commissions,
+                last_mile,
+                drop_off,
+                delivery,
+                acquiring,
+                total_expenses
             ]
         lines.append(line)
+        lines.sort(key=lambda x: x[1])
     print(lines)
+    header = ['Name',
+              'offer_id',
+              'marketing_price',
+              'min_price',
+              'price',
+              'old_price',
+              'ozon commission',
+              'last mile',
+              'Drop off',
+              'delivery',
+              'Acquiring',
+              'Total expenses'
+              ]
+    with open(filename, 'w', encoding='utf-8', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        writer.writerows(lines)
